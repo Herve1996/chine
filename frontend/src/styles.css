@@ -30,36 +30,36 @@ function App() {
   const [category, setCategory] = useState('Toutes');
   const [sent, setSent] = useState(false);
   const [authMode, setAuthMode] = useState('login');
-  const [authForm, setAuthForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'merchant',
-  });
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', role: 'merchant' });
   const [appUser, setAppUser] = useState(readUser);
   const [authMessage, setAuthMessage] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
-
-  useEffect(() => {
-    fetch(`${API}/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}`)
-      .then((response) => response.json())
-      .then((payload) => setProducts(payload.data || []))
-      .catch(() => setProducts([]));
-  }, [search, category]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('togoChinaToken');
     if (!token || !appUser) return;
 
     fetch(`${API}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     }).catch(() => {
       clearSession();
       setAppUser(null);
     });
   }, [appUser]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('togoChinaToken');
+    setIsLoadingProducts(true);
+
+    fetch(`${API}/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((response) => response.json())
+      .then((payload) => setProducts(payload.data || []))
+      .catch(() => setProducts([]))
+      .finally(() => setIsLoadingProducts(false));
+  }, [search, category]);
 
   const addToCart = (product) => {
     setCart((items) => {
@@ -307,25 +307,29 @@ function App() {
             </div>
           </div>
 
-          <div className="grid">
-            {products.map((product) => (
-              <article className="product" key={product.id}>
-                <img src={product.imageUrl} alt={product.name} />
-                <div className="product-body">
-                  <span>{product.category}</span>
-                  <h3>{product.name}</h3>
-                  <p>{product.description}</p>
-                  <div className="product-footer">
-                    <strong>À partir de {product.unitPrice} $</strong>
-                    <button type="button" onClick={() => addToCart(product)}>
-                      Ajouter
-                    </button>
+          {isLoadingProducts ? (
+            <p className="loading-state">Chargement du catalogue…</p>
+          ) : (
+            <div className="grid">
+              {products.map((product) => (
+                <article className="product" key={product.id}>
+                  <img src={product.imageUrl} alt={product.name} />
+                  <div className="product-body">
+                    <span>{product.category}</span>
+                    <h3>{product.name}</h3>
+                    <p>{product.description}</p>
+                    <div className="product-footer">
+                      <strong>À partir de {product.unitPrice} $</strong>
+                      <button type="button" onClick={() => addToCart(product)}>
+                        Ajouter
+                      </button>
+                    </div>
+                    <small>Minimum : {product.minimumOrder} unités</small>
                   </div>
-                  <small>Minimum : {product.minimumOrder} unités</small>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section id="fonctionnement" className="how">
