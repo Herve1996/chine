@@ -8,6 +8,7 @@ CREATE TABLE users (
   name VARCHAR(120) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   phone VARCHAR(30),
+  password_hash TEXT NOT NULL,
   role user_role NOT NULL DEFAULT 'merchant',
   country VARCHAR(80) NOT NULL DEFAULT 'Togo',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
