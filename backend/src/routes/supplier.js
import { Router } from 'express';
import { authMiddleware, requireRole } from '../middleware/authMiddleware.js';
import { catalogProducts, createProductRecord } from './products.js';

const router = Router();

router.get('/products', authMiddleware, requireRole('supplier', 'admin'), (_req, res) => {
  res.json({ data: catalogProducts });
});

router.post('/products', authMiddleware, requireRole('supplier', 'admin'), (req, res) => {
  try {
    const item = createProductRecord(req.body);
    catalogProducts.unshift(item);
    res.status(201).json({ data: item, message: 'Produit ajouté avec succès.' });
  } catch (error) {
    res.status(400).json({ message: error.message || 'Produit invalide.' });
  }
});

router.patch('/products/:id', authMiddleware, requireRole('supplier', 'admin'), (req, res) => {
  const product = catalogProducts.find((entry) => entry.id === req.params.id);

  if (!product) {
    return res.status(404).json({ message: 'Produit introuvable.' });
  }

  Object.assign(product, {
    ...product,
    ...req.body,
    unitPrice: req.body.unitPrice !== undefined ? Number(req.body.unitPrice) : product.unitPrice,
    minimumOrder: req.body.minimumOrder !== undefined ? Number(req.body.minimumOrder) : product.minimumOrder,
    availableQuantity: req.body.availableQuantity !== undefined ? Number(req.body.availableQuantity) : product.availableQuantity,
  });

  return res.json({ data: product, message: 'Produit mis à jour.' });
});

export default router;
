@@ -1,0 +1,77 @@
+import { Router } from 'express';
+import { authMiddleware, requireRole } from '../middleware/authMiddleware.js';
+
+const router = Router();
+
+export const catalogProducts = [
+  { id: 'p1', name: 'Écouteurs Bluetooth TWS', category: 'Électronique', description: 'Écouteurs sans fil avec boîtier de charge.', imageUrl: 'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=800&q=80', unitPrice: 4.8, currency: 'USD', minimumOrder: 50, availableQuantity: 2400 },
+  { id: 'p2', name: 'Lampe LED rechargeable', category: 'Maison', description: 'Lampe portable USB, idéale pour la maison et le commerce.', imageUrl: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=800&q=80', unitPrice: 6.25, currency: 'USD', minimumOrder: 20, availableQuantity: 890 },
+  { id: 'p3', name: 'Sacs à main tendance', category: 'Mode', description: 'Sacs en simili cuir disponibles en plusieurs coloris.', imageUrl: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80', unitPrice: 8.5, currency: 'USD', minimumOrder: 30, availableQuantity: 640 },
+  { id: 'p4', name: 'Montre connectée sport', category: 'Électronique', description: 'Suivi d’activité, notifications et écran couleur.', imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80', unitPrice: 12.9, currency: 'USD', minimumOrder: 10, availableQuantity: 310 },
+];
+
+export const createProductRecord = (payload) => {
+  const { name, category, description, imageUrl, unitPrice, minimumOrder, availableQuantity, currency = 'USD' } = payload;
+
+  if (!name || !category) {
+    throw new Error('Le nom et la catégorie du produit sont requis.');
+  }
+
+  return {
+    id: `p${catalogProducts.length + 1}`,
+    name: String(name).trim(),
+    category: String(category).trim(),
+    description: String(description || '').trim(),
+    imageUrl: String(imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80'),
+    unitPrice: Number(unitPrice ?? 0),
+    currency,
+    minimumOrder: Number(minimumOrder ?? 1),
+    availableQuantity: Number(availableQuantity ?? 0),
+  };
+};
+
+router.get('/', authMiddleware, (req, res) => {
+  const search = String(req.query.search || '').toLowerCase();
+  const category = String(req.query.category || 'Toutes');
+  const result = catalogProducts.filter((product) => {
+    const matchesSearch = !search || `${product.name} ${product.description}`.toLowerCase().includes(search);
+    const matchesCategory = category === 'Toutes' || product.category === category;
+    return matchesSearch && matchesCategory;
+  });
+
+  res.json({ data: result, total: result.length, user: req.user });
+});
+
+router.get('/categories', authMiddleware, (_req, res) => {
+  res.json({ data: ['Toutes', ...new Set(catalogProducts.map((product) => product.category))] });
+});
+
+router.post('/', authMiddleware, requireRole('supplier', 'admin'), (req, res) => {
+  try {
+    const item = createProductRecord(req.body);
+    catalogProducts.unshift(item);
+    res.status(201).json({ data: item, message: 'Produit ajouté avec succès.' });
+  } catch (error) {
+    res.status(400).json({ message: error.message || 'Produit invalide.' });
+  }
+});
+
+router.patch('/:id', authMiddleware, requireRole('supplier', 'admin'), (req, res) => {
+  const product = catalogProducts.find((entry) => entry.id === req.params.id);
+
+  if (!product) {
+    return res.status(404).json({ message: 'Produit introuvable.' });
+  }
+
+  Object.assign(product, {
+    ...product,
+    ...req.body,
+    unitPrice: req.body.unitPrice !== undefined ? Number(req.body.unitPrice) : product.unitPrice,
+    minimumOrder: req.body.minimumOrder !== undefined ? Number(req.body.minimumOrder) : product.minimumOrder,
+    availableQuantity: req.body.availableQuantity !== undefined ? Number(req.body.availableQuantity) : product.availableQuantity,
+  });
+
+  return res.json({ data: product, message: 'Produit mis à jour.' });
+});
+
+export default router;
