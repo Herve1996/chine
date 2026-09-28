@@ -2,30 +2,66 @@
 
 Plateforme B2B qui met en relation les commerçants togolais avec des fournisseurs et agents en Chine.
 
-## Démarrage rapide
+## Stack
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Base de données: PostgreSQL
+- Auth: JWT
+- Architecture: microservice-ready monorepo
 
-### Backend
+## Prérequis
+- Node.js 20+
+- PostgreSQL 16+
+- npm
+
+## Installation locale
+
+### 1. Installer les dépendances
 ```bash
-cd backend
-cp .env.example .env
-npm install
+npm install --prefix backend
+npm install --prefix frontend
+```
+
+### 2. Configurer l'environnement
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+### 3. Créer la base PostgreSQL
+```bash
+createdb togo_china
+psql togo_china < database/schema.sql
+```
+
+### 4. Lancer le projet
+```bash
 npm run dev
 ```
 
-### Frontend
+Le backend est accessible sur http://localhost:4000 et le frontend sur http://localhost:5173.
+
+## Modules inclus
+- Authentification JWT
+- Catalogue produits
+- Fournisseur / produits
+- Agent / devis
+- Admin / supervision
+- Paiements
+- Dashboard commercial
+
+## Production
+Le projet est préparé pour être conteneurisé avec Docker et déployé sur Render, Railway ou un VPS.
+
+## Commandes utiles
 ```bash
-cd frontend
-npm install
-npm run dev
+# Backend
+cd backend && npm run dev
+
+# Frontend
+cd frontend && npm run dev
+
+# Docker
+npm run docker:up
+npm run docker:down
 ```
-
-Le frontend est disponible sur http://localhost:5173 et l'API sur http://localhost:4000.
-
-## Fonctionnalités du MVP
-- Catalogue de produits provenant de fournisseurs chinois
-- Recherche et filtrage par catégorie
-- Panier de demande de devis
-- Création de demandes de devis pour les agents
-- API REST Express et schéma PostgreSQL
-
-Voir `docs/` pour les prochaines étapes et le modèle de données.

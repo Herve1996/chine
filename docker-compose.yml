@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: togo_china
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/togo_china
+      JWT_SECRET: change-this-secret
+      FRONTEND_URL: http://localhost:5173
+    depends_on:
+      - postgres
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    environment:
+      VITE_API_URL: http://localhost:4000/api
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  pgdata:
